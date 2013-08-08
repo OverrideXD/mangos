@@ -277,6 +277,7 @@ MapUpdate.LoadBalanceHighValue = 0.8
 MapUpdate.LoadBalanceLowValue = 0.2
 MapUpdate.MaxVisitorsInUpdate = 9
 MapUpdate.MaxVisitsInUpdate = 10
+vmap.Dynamic.DoubleCheck = 0
 ObjectLoadingSplitter.MaxAllowedTime = 10
 Calendar.RemoveExpiredEvents = -1
 MapUpdate.PositionUpdateDelay = 400

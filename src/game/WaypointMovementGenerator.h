@@ -26,7 +26,9 @@
  */
 
 #include "MovementGenerator.h"
+#include "Transports.h"
 #include "WaypointManager.h"
+#include "WorldLocation.h"
 #include "DBCStructure.h"
 
 #include <vector>
@@ -146,29 +148,61 @@ public PathMovementBase<Player,TaxiPathNodeList const*>
  * and hence generates ground and activities.
  */
 class MANGOS_DLL_SPEC TransportPathMovementGenerator
-    : public PathMovementBase<GameObject,TaxiPathNodeList const*>
+    : public PathMovementBase<Transport,TaxiPathNodeList const*>
 {
     public:
         explicit TransportPathMovementGenerator(TaxiPathNodeList const& pathnodes, uint32 startNode = 0)
         {
             i_path = &pathnodes;
             i_currentNode = startNode;
+            GenerateWaypoints();
         }
-        virtual void Initialize(GameObject &go);
-        virtual void Finalize(GameObject &go);
-        virtual void Interrupt(GameObject &go);
-        virtual void Reset(GameObject &go);
 
-        bool Update(GameObject&, const uint32&);
+        virtual void Initialize(Transport& go);
+        virtual void Finalize(Transport& go);
+        virtual void Interrupt(Transport& go);
+        virtual void Reset(Transport &go);
+
+        bool Update(Transport&, const uint32&);
         MovementGeneratorType GetMovementGeneratorType() const { return FLIGHT_MOTION_TYPE; }
 
+        struct WayPoint
+        {
+            WayPoint() : loc(WorldLocation()), teleport(false) {}
+            WayPoint(uint32 _mapid, float _x, float _y, float _z, bool _teleport, uint32 _arrivalEventID = 0, uint32 _departureEventID = 0, uint32 _index = 0)
+                : loc(_mapid, _x, _y, _z, 0.0f), teleport(_teleport),
+                arrivalEventID(_arrivalEventID), departureEventID(_departureEventID), index(_index)
+            {
+            }
+            WorldLocation loc;
+            bool teleport;
+            uint32 arrivalEventID;
+            uint32 departureEventID;
+            uint32 index;
+        };
+        typedef std::map<uint32, WayPoint> WayPointMap;
+        WayPointMap::const_iterator GetCurrent() const { return m_curr; }
+        WayPointMap::const_iterator GetNext() const    { return m_next; }
+        bool GenerateWaypoints();
+        void MoveToNextWayPoint();                          // move m_next/m_cur to next points
+
         TaxiPathNodeList const& GetPath() { return *i_path; }
-        uint32 GetPathAtMapEnd() const;
-        bool HasArrived() const { return (i_currentNode >= i_path->size()); }
-        void SetCurrentNodeAfterTeleport();
-        void SkipCurrentNode() { ++i_currentNode; }
-        void DoEventIfAny(GameObject& go, TaxiPathNodeEntry const& node, bool departure);
-        bool GetResetPosition(GameObject& go, float& x, float& y, float& z) const;
+        uint32 GetPathAtMapEnd(bool withAnchorage = false) const;
+        void MoveToNextNode(Transport& go);
+        void DoEventIfAny(Transport& go, TaxiPathNodeEntry const& node, bool departure);
+        TaxiPathNodeEntry const* GetCurrentNodeEntry() const;
+        TaxiPathNodeEntry const* GetNextNodeEntry() const;
+        uint32 GetNextNodeIndex() const;
+        bool IsPathBreak() const;
+
+
+    private:
+        IntervalTimer   m_anchorageTimer;
+        WayPointMap m_WayPoints;
+
+        WayPointMap::const_iterator m_curr;
+        WayPointMap::const_iterator m_next;
+        uint32 m_pathTime;
 };
 
 #endif

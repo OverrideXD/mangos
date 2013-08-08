@@ -76,7 +76,7 @@ namespace Movement
         else
         {
             // check path equivalence
-            if (!args.flags.isFacing() && args.path.size() == 2 && args.path[0] == args.path[1])
+            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
                 return 0;
         }
 
@@ -153,7 +153,7 @@ namespace Movement
         MoveSpline& move_spline = *gameobject.movespline;
         TransportInfo* transportInfo = gameobject.GetTransportInfo();
 
-        Position real_position = transportInfo ?
+        Position real_position = transportInfo ? 
                                     transportInfo->GetLocalPosition() :
                                     gameobject.GetPosition();
 
@@ -172,7 +172,7 @@ namespace Movement
         else
         {
             // check path equivalence
-            if (!args.flags.isFacing() && args.path.size() == 2 && args.path[0] == args.path[1])
+            if (!args.flags.isFacing() && args.path[0] == args.path[args.path.size() - 1])
                 return 0;
         }
 
@@ -182,7 +182,6 @@ namespace Movement
 
         if (fabs(args.velocity) < M_NULL_F)
             return 0;
-//            args.velocity = gameobject.GetSpeed();
 
         move_spline.Initialize(args);
         return move_spline.Duration();

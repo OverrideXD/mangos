@@ -30,7 +30,6 @@
 #include "WorldObjectEvents.h"
 #include "WorldLocation.h"
 #include "LootMgr.h"
-#include "Util.h"
 
 #include <set>
 #include <string>
@@ -251,9 +250,8 @@ class MANGOS_DLL_SPEC Object
 
         void ApplyPercentModFloatValue(uint16 index, float val, bool apply)
         {
-            float var = GetFloatValue(index);
-            ApplyPercentModFloatVar(var, val, apply);
-            SetFloatValue(index, var);
+            val = val != -100.0f ? val : -99.9f ;
+            SetFloatValue(index, GetFloatValue(index) * (apply?(100.0f+val)/100.0f : 100.0f / (100.0f+val)) );
         }
 
         void SetFlag( uint16 index, uint32 newFlag );
@@ -589,7 +587,8 @@ class MANGOS_DLL_SPEC WorldObject : public Object
         float GetExactDist2d(const float x, const float y) const
         { return sqrt(GetExactDist2dSq(x, y)); }
 
-        float GetAngle( const WorldObject* obj ) const;
+        float GetAngle(Position const& pos) const;
+        float GetAngle(WorldObject const* obj ) const;
         float GetAngle( const float x, const float y ) const;
         bool HasInArc( const float arcangle, const WorldObject* obj ) const;
         bool isInFrontInMap(WorldObject const* target,float distance, float arc = M_PI) const;

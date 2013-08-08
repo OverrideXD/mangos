@@ -265,8 +265,7 @@ bool VehicleKit::AddPassenger(Unit* passenger, int8 seatId)
 
         passenger->SetCharm(GetBase());
 
-        if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) ||
-            (GetBase()->GetTypeId() == TYPEID_UNIT && ((Creature*)GetBase())->CanFly()))
+        if (GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) || ((Creature*)GetBase())->CanFly())
         {
             WorldPacket data(SMSG_MOVE_SET_CAN_FLY, 8 + 4);
             data << GetBase()->GetPackGUID();
@@ -412,8 +411,7 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
         player->SetMover(player);
         player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_ROOT);
 
-        if ((GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED) ||
-            (GetBase()->GetTypeId() == TYPEID_UNIT && ((Creature*)GetBase())->CanFly())) &&
+        if ((GetBase()->HasAuraType(SPELL_AURA_FLY) || GetBase()->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)) &&
             (!player->HasAuraType(SPELL_AURA_FLY) && !player->HasAuraType(SPELL_AURA_MOD_FLIGHT_SPEED)))
         {
             WorldPacket dataCF(SMSG_MOVE_UNSET_CAN_FLY, 8 + 4);
@@ -424,9 +422,6 @@ void VehicleKit::RemovePassenger(Unit* passenger, bool dismount /*false*/)
             player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_FLYING);
             player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_CAN_FLY);
         }
-
-        if (GetBase()->IsLevitating())
-            player->m_movementInfo.RemoveMovementFlag(MOVEFLAG_LEVITATING);
     }
 
     UpdateFreeSeatCount();
@@ -634,7 +629,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
 
         // may be under water
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, frand(2.0f, 3.0f), frand(M_PI_F / 2.0f, 3.0f * M_PI_F / 2.0f), passenger);
-        if (m_dst_z < pos.z && !base->IsLevitating())
+        if (m_dst_z < pos.z)
             m_dst_z = pos.z;
 
         if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(m_dst_x, m_dst_y))
@@ -649,7 +644,7 @@ void VehicleKit::Dismount(Unit* passenger, VehicleSeatEntry const* seatInfo)
         // jump from vehicle without seatInfo (? error case)
         base->GetClosePoint(m_dst_x, m_dst_y, m_dst_z, tRadius, 2.0f, M_PI_F, passenger);
         passenger->UpdateAllowedPositionZ(m_dst_x, m_dst_y, m_dst_z);
-        if (m_dst_z < pos.z && !base->IsLevitating())
+        if (m_dst_z < pos.z)
             m_dst_z = pos.z;
 
         if (passenger->GetTypeId() != TYPEID_PLAYER && !GetBase()->GetMap()->IsLoaded(m_dst_x, m_dst_y))
