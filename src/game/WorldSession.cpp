@@ -39,6 +39,7 @@
 #include "LFGMgr.h"
 #include "Auth/AuthCrypt.h"
 #include "Auth/HMACSHA1.h"
+#include <openssl/md5.h>
 #include "zlib/zlib.h"
 #include "warden/WardenWin.h"
 #include "warden/WardenMac.h"
@@ -935,8 +936,8 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
         for(uint32 i = 0; i < addonsCount; ++i)
         {
             std::string addonName;
-            uint8 enabled;
-            uint32 crc, unk1;
+            uint8 has_pub_key;
+            uint32 pub_key_crc, url_crc;
 
             // check next addon data format correctness
             if(addonInfo.rpos()+1 > addonInfo.size())
@@ -944,15 +945,15 @@ void WorldSession::ReadAddonsInfo(WorldPacket &data)
 
             addonInfo >> addonName;
 
-            addonInfo >> enabled >> crc >> unk1;
+            addonInfo >> has_pub_key >> pub_key_crc >> url_crc;
 
-            DEBUG_LOG("ADDON: Name: %s, Enabled: 0x%x, CRC: 0x%x, Unknown2: 0x%x", addonName.c_str(), enabled, crc, unk1);
+            DEBUG_LOG("WorldSession::ReadAddonsInfo: Name: %s, has_pub_key: 0x%x, pub_key_crc: 0x%x, url_crc: 0x%x", addonName.c_str(), has_pub_key, pub_key_crc, url_crc);
 
-            m_addonsList.push_back(AddonInfo(addonName, enabled, crc));
+            m_addonsList.push_back(AddonInfo(addonName, has_pub_key, pub_key_crc, url_crc));
         }
 
-        uint32 unk2;
-        addonInfo >> unk2;
+        uint32 bannedTimeStamp;
+        addonInfo >> bannedTimeStamp;                       // LatestBannedAddOnTimestamp
 
         if(addonInfo.rpos() != addonInfo.size())
             DEBUG_LOG("packet under read!");
@@ -994,7 +995,7 @@ void WorldSession::SendAddonsInfo()
         data << uint8(unk1);
         if (unk1)
         {
-            uint8 unk2 = (itr->CRC != 0x4c1c776d);          // If addon is Standard addon CRC
+            uint8 unk2 = (itr->pub_key_crc != 0x4c1c776d);  // If addon is Standard addon CRC
             data << uint8(unk2);                            // if 1, than add addon public signature
             if (unk2)                                       // if CRC is wrong, add public key (client need it)
                 data.append(tdata, sizeof(tdata));
@@ -1015,15 +1016,31 @@ void WorldSession::SendAddonsInfo()
 
     uint32 count = 0;
     data << uint32(count);                                  // BannedAddons count
-    /*for(uint32 i = 0; i < count; ++i)
+
+// FIXME - currently no realization for this packet creating, only sample for test/make!
+    for(uint32 i = 0; i < count; ++i)
     {
-        uint32
-        string (16 bytes)
-        string (16 bytes)
-        uint32
-        uint32
-        uint32
-    }*/
+        data << uint32(1);                                  // index
+
+        MD5_CTX ctx;
+        MD5_Init(&ctx);
+
+        char const* addon = "BannedAddon";                  // sample addon name
+        MD5_Update(&ctx, addon, strlen(addon));
+        uint8 name_hash[16];
+        MD5_Final(name_hash, &ctx);
+        data.append(name_hash, 16);                         // Name MD5 (hash of addon's folder name)
+
+        MD5_Init(&ctx);
+        char const* version = "0.1";                        // addon version, ie "1.0"
+        MD5_Update(&ctx, version, strlen(version));
+        uint8 version_hash[16];
+        MD5_Final(version_hash, &ctx);
+        data.append(version_hash, 16);                      // Version MD5 (hash of "Version" metadata from addon's .toc file, if present)
+
+        data << uint32(time(NULL));                         // ban timestamp
+        data << uint32(1);                                  // state - should have low bit set! (client checks state & 1)
+    }
 
     SendPacket(&data);
 }

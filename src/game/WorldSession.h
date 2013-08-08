@@ -82,16 +82,18 @@ struct AccountData
 
 struct AddonInfo
 {
-    AddonInfo(const std::string& name, uint8 enabled, uint32 crc) :
+    AddonInfo(std::string const& name, uint8 has_pub_key, uint32 pub_key_crc, uint32 url_crc) :
         Name(name),
-        Enabled(enabled),
-        CRC(crc)
+        has_pub_key(has_pub_key),
+        pub_key_crc(pub_key_crc),
+        url_crc(url_crc)
     {
     }
 
     std::string Name;
-    uint8 Enabled;
-    uint32 CRC;
+    uint8 has_pub_key;
+    uint32 pub_key_crc;
+    uint32 url_crc;
 };
 
 typedef std::list<AddonInfo> AddonsList;
